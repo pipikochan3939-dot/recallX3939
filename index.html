@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RecallX | スタイリッシュ暗記アプリ</title>
+  <meta name="description" content="RecallXは、画像から問題を作って最短で覚えるスタイリッシュ暗記アプリ。復習タイミング管理、ミニテスト、学習ログで記憶を定着。" />
+  <meta property="og:title" content="RecallX | スタイリッシュ暗記アプリ" />
+  <meta property="og:description" content="画像から問題作成→最短で覚える。復習・テスト・ログで定着。" />
+  <meta property="og:type" content="website" />
+
+  <style>
+    :root{
+      --bg:#070A12;
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.08);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.66);
+      --line: rgba(255,255,255,.10);
+      --accent:#7C5CFF;
+      --accent2:#22D3EE;
+      --ok:#34D399;
+      --warn:#FBBF24;
+
+      --radius: 18px;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --max: 1120px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1100px 500px at 10% -10%, rgba(124,92,255,.45), transparent 60%),
+        radial-gradient(900px 480px at 90% 0%, rgba(34,211,238,.35), transparent 60%),
+        radial-gradient(700px 360px at 70% 90%, rgba(124,92,255,.20), transparent 60%),
+        linear-gradient(180deg, #050816, #070A12 40%, #050816);
+      overflow-x:hidden;
+    }
+
+    a{ color:inherit; text-decoration:none; }
+    .container{ width:min(var(--max), calc(100% - 40px)); margin:0 auto; }
+
+    /* Top Nav */
+    .nav{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(to bottom, rgba(7,10,18,.80), rgba(7,10,18,.40));
+      border-bottom:1px solid var(--line);
+    }
+    .nav-inner{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 0;
+      gap:16px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight:800; letter-spacing:.2px;
+    }
+    .logo{
+      width:34px; height:34px; border-radius:12px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.25), transparent 40%),
+        linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 10px 30px rgba(124,92,255,.35);
+      border:1px solid rgba(255,255,255,.18);
+    }
+    .nav-links{
+      display:flex; gap:18px; align-items:center;
+      color:var(--muted);
+      font-weight:600;
+    }
+    .nav-links a:hover{ color:var(--text); }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:10px;
+      padding:12px 16px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      font-weight:800;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.09);
+      border-color: rgba(255,255,255,.22);
+    }
+    .btn-primary{
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-color: rgba(255,255,255,.18);
+      box-shadow: 0 16px 40px rgba(124,92,255,.25);
+    }
+    .btn-primary:hover{ filter: brightness(1.05); }
+
+    /* Hero */
+    .hero{
+      padding:56px 0 26px;
+    }
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:30px;
+      align-items:stretch;
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:8px 12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--muted);
+      font-weight:700;
+      width:fit-content;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:50%;
+      background: var(--ok);
+      box-shadow: 0 0 0 6px rgba(52,211,153,.15);
+    }
+    h1{
+      margin:14px 0 12px;
+      font-size: clamp(34px, 4vw, 56px);
+      line-height:1.07;
+      letter-spacing:-.6px;
+    }
+    .lead{
+      margin:0 0 18px;
+      color:var(--muted);
+      font-size: clamp(15px, 1.35vw, 18px);
+      line-height:1.7;
+    }
+    .cta-row{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+    .mini{
+      display:flex; gap:14px; align-items:center; margin-top:14px;
+      color:rgba(255,255,255,.60);
+      font-weight:700;
+      font-size:13px;
+    }
+    .mini span{
+      display:inline-flex; gap:8px; align-items:center;
+    }
+    .check{
+      width:18px; height:18px; border-radius:6px;
+      background: rgba(52,211,153,.15);
+      border:1px solid rgba(52,211,153,.30);
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:12px;
+      color:var(--ok);
+    }
+
+    /* Mock */
+    .mock{
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+      min-height: 420px;
+    }
+    .mock::before{
+      content:"";
+      position:absolute; inset:-120px -140px auto auto;
+      width:420px; height:420px; border-radius:50%;
+      background: radial-gradient(circle, rgba(34,211,238,.25), transparent 60%);
+      filter: blur(2px);
+    }
+    .mock::after{
+      content:"";
+      position:absolute; inset:auto auto -130px -150px;
+      width:520px; height:520px; border-radius:50%;
+      background: radial-gradient(circle, rgba(124,92,255,.26), transparent 60%);
+      filter: blur(2px);
+    }
+    .mock-inner{
+      position:relative;
+      padding:18px;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    .mock-top{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+      padding:12px 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .pill{
+      padding:8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      color:rgba(255,255,255,.78);
+      font-weight:800;
+      font-size:12px;
+    }
+    .mock-cards{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      flex:1;
+    }
+    .card{
+      border-radius: 16px;
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.10);
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-height: 140px;
+    }
+    .card h3{
+      margin:0;
+      font-size:14px;
+      letter-spacing:.2px;
+    }
+    .card p{
+      margin:0;
+      color:rgba(255,255,255,.65);
+      font-size:13px;
+      line-height:1.55;
+    }
+    .bar{
+      height:10px; border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+    }
+    .bar > i{
+      display:block; height:100%;
+      width: 72%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+    }
+    .mock-bottom{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      padding:12px;
+      border-radius: 16px;
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .stat{
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .stat b{ font-size:14px; }
+    .stat small{ color:rgba(255,255,255,.62); font-weight:700; }
+
+    /* Sections */
+    section{ padding: 54px 0; }
+    .section-title{
+      display:flex; align-items:flex-end; justify-content:space-between;
+      gap:18px;
+      margin-bottom:18px;
+    }
+    .section-title h2{
+      margin:0;
+      font-size: clamp(22px, 2.2vw, 32px);
+      letter-spacing:-.3px;
+    }
+    .section-title p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.7;
+      max-width: 54ch;
+    }
+
+    .grid3{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:14px;
+    }
+    .panel{
+      border-radius: var(--radius);
+      background: var(--panel);
+      border:1px solid rgba(255,255,255,.12);
+      padding:18px;
+    }
+    .panel strong{
+      display:block;
+      font-size:14px;
+      letter-spacing:.2px;
+      margin-bottom:8px;
+    }
+    .panel .desc{
+      color:var(--muted);
+      margin:0;
+      line-height:1.7;
+      font-size:14px;
+    }
+    .icon{
+      width:44px; height:44px; border-radius: 16px;
+      background: linear-gradient(135deg, rgba(124,92,255,.35), rgba(34,211,238,.25));
+      border:1px solid rgba(255,255,255,.16);
+      display:flex; align-items:center; justify-content:center;
+      margin-bottom:10px;
+      font-size:18px;
+    }
+
+    .steps{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+    }
+    .step{
+      display:flex; gap:14px; align-items:flex-start;
+      padding:18px;
+      border-radius: var(--radius);
+      background: var(--panel);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .num{
+      width:36px; height:36px; border-radius: 14px;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.12);
+      font-weight:900;
+    }
+    .step b{ display:block; margin-bottom:6px; }
+    .step p{ margin:0; color:var(--muted); line-height:1.7; }
+
+    /* Pricing */
+    .pricing{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:14px;
+      align-items:stretch;
+    }
+    .price{
+      border-radius: var(--radius);
+      background: var(--panel);
+      border:1px solid rgba(255,255,255,.12);
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      position:relative;
+    }
+    .price.featured{
+      background: linear-gradient(180deg, rgba(124,92,255,.18), rgba(255,255,255,.06));
+      border-color: rgba(124,92,255,.35);
+      box-shadow: 0 20px 70px rgba(124,92,255,.18);
+    }
+    .tag{
+      position:absolute; top:14px; right:14px;
+      padding:7px 10px;
+      border-radius: 999px;
+      background: rgba(124,92,255,.20);
+      border:1px solid rgba(124,92,255,.35);
+      font-weight:900;
+      font-size:12px;
+      color: rgba(255,255,255,.90);
+    }
+    .price h3{ margin:0; font-size:16px; }
+    .yen{
+      font-size:30px; font-weight:900; letter-spacing:-.6px;
+      margin:2px 0 0;
+    }
+    .yen small{ font-size:13px; color:var(--muted); font-weight:800; }
+    .ul{
+      list-style:none; padding:0; margin:0;
+      display:flex; flex-direction:column; gap:10px;
+      color: rgba(255,255,255,.78);
+      font-weight:700;
+      font-size:14px;
+    }
+    .ul li{ display:flex; gap:10px; align-items:flex-start; }
+    .ul .b{
+      width:18px; height:18px; border-radius:6px;
+      background: rgba(34,211,238,.14);
+      border:1px solid rgba(34,211,238,.26);
+      display:flex; align-items:center; justify-content:center;
+      margin-top:2px;
+      font-size:12px;
+      color: var(--accent2);
+      flex:0 0 auto;
+    }
+
+    /* FAQ */
+    details{
+      border-radius: 16px;
+      background: var(--panel);
+      border:1px solid rgba(255,255,255,.12);
+      padding:14px 16px;
+    }
+    details + details{ margin-top:10px; }
+    summary{
+      cursor:pointer;
+      list-style:none;
+      font-weight:900;
+      color: rgba(255,255,255,.88);
+    }
+    summary::-webkit-details-marker{ display:none; }
+    details p{ margin:10px 0 0; color:var(--muted); line-height:1.75; }
+
+    /* Footer */
+    footer{
+      padding:36px 0 42px;
+      border-top:1px solid var(--line);
+      color: rgba(255,255,255,.64);
+    }
+    .foot{
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:20px;
+      flex-wrap:wrap;
+    }
+    .foot small{ color: rgba(255,255,255,.58); }
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .hero-grid{ grid-template-columns: 1fr; }
+      .mock{ min-height: 380px; }
+      .grid3{ grid-template-columns: 1fr; }
+      .steps{ grid-template-columns: 1fr; }
+      .pricing{ grid-template-columns: 1fr; }
+      .nav-links{ display:none; }
+    }
+
+    /* Subtle anchor offset for sticky nav */
+    .anchor{ scroll-margin-top: 90px; }
+
+    /* Tiny toast */
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.14);
+      color: rgba(255,255,255,.88);
+      padding: 12px 14px;
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+      display:none;
+      max-width: min(520px, calc(100% - 28px));
+      font-weight: 800;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="#top" aria-label="RecallX home">
+        <span class="logo" aria-hidden="true"></span>
+        <span>RecallX</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#features">特徴</a>
+        <a href="#how">使い方</a>
+        <a href="#pricing">料金</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+
+      <div style="display:flex; gap:10px; align-items:center;">
+        <a class="btn" href="#pricing">料金を見る</a>
+        <button class="btn btn-primary" id="btnTry" type="button">無料で試す</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- HERO -->
+    <div class="container hero">
+      <div class="hero-grid">
+        <div>
+          <div class="badge">
+            <span class="dot" aria-hidden="true"></span>
+            <span>画像から問題作成 → 最短で定着</span>
+          </div>
+
+          <h1>“覚える”を、<br>スタイリッシュに最短化。</h1>
+
+          <p class="lead">
+            RecallXは、ノート・教科書・講義スライドを撮るだけで暗記カード化。
+            復習タイミング管理とミニテストで、やる気に頼らず“定着”まで運びます。
+          </p>
+
+          <div class="cta-row">
+            <button class="btn btn-primary" id="btnTry2" type="button">今すぐ無料で始める</button>
+            <a class="btn" href="#features">機能を見る</a>
+          </div>
+
+          <div class="mini">
+            <span><span class="check">✓</span>広告なしプランあり</span>
+            <span><span class="check">✓</span>スキマ時間で回る</span>
+            <span><span class="check">✓</span>学習ログで可視化</span>
+          </div>
+        </div>
+
+        <!-- Mock UI -->
+        <div class="mock" aria-label="App preview mock">
+          <div class="mock-inner">
+            <div class="mock-top">
+              <div class="pill">Today • 12 min</div>
+              <div class="pill">Streak • 7 days</div>
+              <div class="pill">Review • 24 cards</div>
+            </div>
+
+            <div class="mock-cards">
+              <div class="card">
+                <h3>画像からカード化</h3>
+                <p>教科書の写真 → 重要箇所を問題に。スピード重視の入力設計。</p>
+                <div class="bar" aria-label="progress"><i></i></div>
+              </div>
+              <div class="card">
+                <h3>復習タイミング</h3>
+                <p>忘却曲線に合わせて自動で“今やるべき”を並べ替え。</p>
+                <div class="bar"><i style="width:58%"></i></div>
+              </div>
+              <div class="card">
+                <h3>ミニテスト</h3>
+                <p>1分で回る小テスト。間違いだけ再登場で最短ルート。</p>
+                <div class="bar"><i style="width:66%"></i></div>
+              </div>
+              <div class="card">
+                <h3>学習ログ</h3>
+                <p>学習量が数字で見える。モチベが落ちても続く仕組み。</p>
+                <div class="bar"><i style="width:80%"></i></div>
+              </div>
+            </div>
+
+            <div class="mock-bottom">
+              <div class="stat">
+                <b>+18%</b>
+                <small>week growth</small>
+              </div>
+              <button class="btn btn-primary" type="button" style="padding:10px 14px;" onclick="scrollToId('pricing')">
+                プランを見る →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FEATURES -->
+    <section id="features" class="anchor">
+      <div class="container">
+        <div class="section-title">
+          <div>
+            <h2>RecallXの特徴</h2>
+            <p>“作る・覚える・続く”を1ページで完結させる設計。</p>
+          </div>
+        </div>
+
+        <div class="grid3">
+          <div class="panel">
+            <div class="icon">📸</div>
+            <strong>画像 → 問題化が速い</strong>
+            <p class="desc">スキャンして貼るだけ。入力の手間を削って“量”を作れる。</p>
+          </div>
+          <div class="panel">
+            <div class="icon">🧠</div>
+            <strong>復習が自動で回る</strong>
+            <p class="desc">忘れそうなタイミングで出てくるから、やるべきが迷子にならない。</p>
+          </div>
+          <div class="panel">
+            <div class="icon">📈</div>
+            <strong>学習が見える化</strong>
+            <p class="desc">回数・正答率・継続日数が見えるので、気分に左右されにくい。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW -->
+    <section id="how" class="anchor">
+      <div class="container">
+        <div class="section-title">
+          <div>
+            <h2>使い方は3ステップ</h2>
+            <p>難しい設定なし。最短で「今日やること」に入れます。</p>
+          </div>
+        </div>
+
+        <div class="steps">
+          <div class="step">
+            <div class="num">1</div>
+            <div>
+              <b>撮る</b>
+              <p>教科書・ノート・スライドを撮影して取り込む。</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <div>
+              <b>作る</b>
+              <p>問題文と答えをサクッと追加。必要ならタグや科目も付ける。</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <div>
+              <b>回す</b>
+              <p>復習とミニテストで定着。間違いだけ集中的にやる。</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="num">+</div>
+            <div>
+              <b>続く</b>
+              <p>ログ・連続日数・短時間メニューで、モチベが無くても進む。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRICING -->
+    <section id="pricing" class="anchor">
+      <div class="container">
+        <div class="section-title">
+          <div>
+            <h2>料金プラン</h2>
+            <p>まずは無料で十分。必要になったらアップグレード。</p>
+          </div>
+        </div>
+
+        <div class="pricing">
+          <div class="price">
+            <h3>Free</h3>
+            <div class="yen">¥0 <small>/ 月</small></div>
+            <ul class="ul">
+              <li><span class="b">✓</span>カード作成（基本）</li>
+              <li><span class="b">✓</span>復習（基本）</li>
+              <li><span class="b">✓</span>学習ログ（簡易）</li>
+            </ul>
+            <button class="btn" type="button" onclick="openToast('Freeプランを選択（デモ）')">Freeで始める</button>
+          </div>
+
+          <div class="price featured">
+            <div class="tag">人気</div>
+            <h3>Pro</h3>
+            <div class="yen">¥480 <small>/ 月</small></div>
+            <ul class="ul">
+              <li><span class="b">✓</span>広告なし</li>
+              <li><span class="b">✓</span>復習の最適化（詳細）</li>
+              <li><span class="b">✓</span>ミニテスト強化</li>
+              <li><span class="b">✓</span>学習ログ（詳細）</li>
+            </ul>
+            <button class="btn btn-primary" type="button" onclick="openToast('Proプランを選択（デモ）')">Proを試す</button>
+          </div>
+
+          <div class="price">
+            <h3>Team</h3>
+            <div class="yen">¥980 <small>/ 月</small></div>
+            <ul class="ul">
+              <li><span class="b">✓</span>共有デッキ</li>
+              <li><span class="b">✓</span>共同編集</li>
+              <li><span class="b">✓</span>進捗の共有</li>
+            </ul>
+            <button class="btn" type="button" onclick="openToast('Teamプランを選択（デモ）')">Teamを見る</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="anchor">
+      <div class="container">
+        <div class="section-title">
+          <div>
+            <h2>よくある質問</h2>
+            <p>LPに最低限入れておくと、離脱が減りやすいです。</p>
+          </div>
+        </div>
+
+        <details>
+          <summary>無料でどこまで使えますか？</summary>
+          <p>基本的なカード作成と復習は無料で使えます。慣れてきて「広告なし」「ログ強化」が欲しくなったらProが合います。</p>
+        </details>
+
+        <details>
+          <summary>スマホだけで完結しますか？</summary>
+          <p>基本はスマホで完結できます。将来的にPC同期やエクスポートを用意すると、より安心感が出ます。</p>
+        </details>
+
+        <details>
+          <summary>勉強が続かないタイプでも大丈夫？</summary>
+          <p>「今日やるべき」が自動で出る、1分テスト、ログの可視化で“気合い”依存を減らす設計にしています。</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section>
+      <div class="container">
+        <div class="panel" style="background: linear-gradient(180deg, rgba(34,211,238,.10), rgba(124,92,255,.12));">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+            <div>
+              <div class="badge" style="margin-bottom:10px;">
+                <span class="dot" aria-hidden="true" style="background:var(--warn); box-shadow: 0 0 0 6px rgba(251,191,36,.12);"></span>
+                <span>今日から1分でスタート</span>
+              </div>
+              <h2 style="margin:0 0 6px;">まずは無料で、最短ルートを体感。</h2>
+              <p style="margin:0; color:var(--muted); line-height:1.7;">ここに「App Store / Google Play」ボタンを置くとLPっぽさが一気に上がります。</p>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-primary" type="button" onclick="openToast('ダウンロード導線（デモ）')">今すぐ無料で始める</button>
+              <a class="btn" href="#top">上に戻る</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container foot">
+      <div>
+        <div class="brand" style="margin-bottom:8px;">
+          <span class="logo" aria-hidden="true"></span>
+          <span>RecallX</span>
+        </div>
+        <small>© <span id="year"></span> RecallX. All rights reserved.</small>
+      </div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; color:rgba(255,255,255,.62); font-weight:800;">
+        <a href="#features">特徴</a>
+        <a href="#how">使い方</a>
+        <a href="#pricing">料金</a>
+        <a href="#faq">FAQ</a>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // Smooth scroll helper
+    function scrollToId(id){
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // Demo toast
+    let toastTimer = null;
+    function openToast(message){
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.style.display = "block";
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.style.display = "none"; }, 2200);
+    }
+
+    // Bind CTA buttons
+    document.getElementById("btnTry").addEventListener("click", () => {
+      openToast("無料で試す（デモ）");
+      scrollToId("pricing");
+    });
+    document.getElementById("btnTry2").addEventListener("click", () => {
+      openToast("無料で始める（デモ）");
+      scrollToId("pricing");
+    });
+
+    // Year
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
